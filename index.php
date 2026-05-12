@@ -4,6 +4,21 @@
 // Todas las peticiones entran aquí gracias a .htaccess
 // =============================================================
 
+// Permitir el origen específico de tu cliente en Vercel
+header("Access-Control-Allow-Origin: https://bandstack-client.vercel.app");
+
+// Permitir los métodos que usa Angular
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+
+// Permitir las cabeceras que envía Angular (incluyendo Content-Type y Authorization)
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
+// Responder de inmediato a la petición preflight (OPTIONS)
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    header("HTTP/1.1 200 OK");
+    exit();
+}
+
 declare(strict_types=1);
 
 // --- Zona horaria ------------------------------------------
