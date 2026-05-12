@@ -1,4 +1,19 @@
+# 1. Configuración de CORS a nivel de servidor
+<IfModule mod_headers.c>
+    # Forzamos la cabecera de origen (debe coincidir exactamente con tu URL de Vercel)
+    Header always set Access-Control-Allow-Origin "https://bandstack-client.vercel.app"
+    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header always set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# 2. Responder 200 inmediatamente si la petición es OPTIONS
+# Esto evita que Angular espere a que PHP procese nada
 RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# 3. Tu ruteo normal para PHP
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
