@@ -1,0 +1,18 @@
+# Dependencias de Composer
+vendor/
+
+# Archivos de entorno y credenciales (¡Muy importante!)
+.env
+.env.*
+!.env.example
+
+# Logs y Caché
+*.log
+logs/
+cache/
+
+# Entornos de desarrollo y OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
