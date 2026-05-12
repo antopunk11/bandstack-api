@@ -21,7 +21,7 @@ define('JWT_ISSUER', 'bandstack-api');
 // --- CORS --------------------------------------------------
 define('CORS_ALLOWED_ORIGINS', [
     'http://localhost:4200',         // Angular dev
-    'https://tudominio.com',         // Producción
+    'bandstack-client.vercel.app',   // Producción
 ]);
 
 // --- Password hashing -------------------------------------
