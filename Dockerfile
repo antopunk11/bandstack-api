@@ -7,6 +7,9 @@ RUN a2enmod rewrite headers
 # 3. Instalar las extensiones de MySQL para PDO
 RUN docker-php-ext-install pdo pdo_mysql
 
+# para las cors
+RUN a2enmod headers
+
 # 4. Configurar Apache para que permita el uso de .htaccess (AllowOverride All)
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
