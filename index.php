@@ -4,20 +4,23 @@
 // Todas las peticiones entran aquí gracias a .htaccess
 // =============================================================
 
-// Permitir el origen específico de tu cliente en Vercel
-header("Access-Control-Allow-Origin: https://bandstack-client.vercel.app");
+// Evitamos cualquier espacio o salida previa
+ob_start(); 
 
-// Permitir los métodos que usa Angular
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+$allowedOrigin = "https://bandstack-client.vercel.app";
 
-// Permitir las cabeceras que envía Angular (incluyendo Content-Type y Authorization)
+header("Access-Control-Allow-Origin: $allowedOrigin");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Credentials: true");
 
-// Responder de inmediato a la petición preflight (OPTIONS)
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+// Si es OPTIONS, cortamos la ejecución AQUÍ mismo
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header("HTTP/1.1 200 OK");
-    exit();
+    ob_end_clean();
+    exit;
 }
+ob_end_flush();
 
 declare(strict_types=1);
 
