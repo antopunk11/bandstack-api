@@ -13,11 +13,11 @@ class Database
     public static function getInstance(): PDO
     {
         if (self::$instance === null) {
-            $host   = getenv('DB_HOST')     ?: 'bandstack-bandstack.h.aivencloud.com';
-            $port   = getenv('DB_PORT')     ?: '13701';
+            $host   = getenv('DB_HOST')     ?: 'localhost';
+            $port   = getenv('DB_PORT')     ?: '3306';
             $dbname = getenv('DB_NAME')     ?: 'bandstack';
-            $user   = getenv('DB_USER')     ?: 'avnadmin';
-            $pass   = getenv('DB_PASS')     ?: 'AVNS_g-_qbHCY5m-CsJwfm7N';
+            $user   = getenv('DB_USER')     ?: 'root';
+            $pass   = getenv('DB_PASS')     ?: '';
 
             $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
 
