@@ -5,22 +5,22 @@
 // =============================================================
 
 // Evitamos cualquier espacio o salida previa
-ob_start(); 
+//ob_start(); 
 
-$allowedOrigin = "https://bandstack-client.vercel.app";
+//$allowedOrigin = "https://bandstack-client.vercel.app";
 
-header("Access-Control-Allow-Origin: $allowedOrigin");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
+//header("Access-Control-Allow-Origin: $allowedOrigin");
+//header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+//header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+//header("Access-Control-Allow-Credentials: true");
 
 // Si es OPTIONS, cortamos la ejecución AQUÍ mismo
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header("HTTP/1.1 200 OK");
-    ob_end_clean();
-    exit;
-}
-ob_end_flush();
+//if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+//    header("HTTP/1.1 200 OK");
+//    ob_end_clean();
+//    exit;
+//}
+//ob_end_flush();
 
 declare(strict_types=1);
 
