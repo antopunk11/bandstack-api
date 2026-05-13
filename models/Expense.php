@@ -19,7 +19,7 @@ class Expense
     {
         $stmt = $this->db->prepare(
             "SELECT e.id, e.event_id, ev.name as event_name, e.category, e.amount,
-                    e.description, e.expense_date, e.is_paid, u.name as user_name, e.created_by
+                    e.description, e.expense_date, e.is_paid, e.receipt_url, u.name as user_name, e.created_by
                FROM expenses e
                LEFT JOIN events ev ON e.event_id = ev.id
                LEFT JOIN users u ON e.created_by = u.id
@@ -48,8 +48,8 @@ class Expense
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO expenses (band_id, event_id, category, amount, description, expense_date, is_paid, created_by)
-             VALUES (:band_id, :event_id, :category, :amount, :description, :expense_date, :is_paid, :created_by)"
+            "INSERT INTO expenses (band_id, event_id, category, amount, description, expense_date, is_paid, receipt_url, created_by)
+             VALUES (:band_id, :event_id, :category, :amount, :description, :expense_date, :is_paid, :receipt_url, :created_by)"
         );
         
         $stmt->execute([
@@ -60,6 +60,7 @@ class Expense
             ':description'  => $data['description'],
             ':expense_date' => $data['expense_date'],
             ':is_paid'      => $data['is_paid'] ?? 0,
+            ':receipt_url'  => $data['receipt_url'] ?? null,
             ':created_by'   => $data['created_by']
         ]);
 
@@ -78,7 +79,8 @@ class Expense
                     amount = :amount,
                     description = :description,
                     expense_date = :expense_date,
-                    is_paid = :is_paid
+                    is_paid = :is_paid,
+                    receipt_url = :receipt_url
               WHERE id = :id AND band_id = :band_id"
         );
         
@@ -89,6 +91,7 @@ class Expense
             ':description'  => $data['description'],
             ':expense_date' => $data['expense_date'],
             ':is_paid'      => $data['is_paid'] ?? 0,
+            ':receipt_url'  => $data['receipt_url'],
             ':id'      => $id,
             ':band_id' => $bandId
         ]);

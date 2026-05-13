@@ -85,6 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // --- Routing -----------------------------------------------
 $method = $_SERVER['REQUEST_METHOD'];
+
+// Soporte para "Method Spoofing" (Permite enviar archivos por PUT usando POST)
+if ($method === 'POST' && isset($_POST['_method'])) {
+    $method = strtoupper($_POST['_method']);
+}
+
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Normalizar: ignorar la subcarpeta de instalación y quitar el /api/v1
