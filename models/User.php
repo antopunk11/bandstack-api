@@ -38,9 +38,10 @@ class User
     public function findByEmail(string $email): ?array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, band_id, name, email, password_hash, role, is_active
-               FROM users
-              WHERE email = :email
+            "SELECT u.id, u.band_id, b.name as band_name, b.logo_url as band_logo_url, u.name, u.email, u.password_hash, u.role, u.is_active
+               FROM users u
+          LEFT JOIN bands b ON u.band_id = b.id
+              WHERE u.email = :email
               LIMIT 1"
         );
         $stmt->execute([':email' => strtolower(trim($email))]);
@@ -96,9 +97,11 @@ class User
     {
         $stmt = $this->db->prepare(
             "SELECT rt.id, rt.user_id, rt.expires_at, rt.revoked,
-                    u.name, u.email, u.role, u.is_active
+                    u.band_id, u.name, u.email, u.role, u.is_active,
+                    b.name as band_name, b.logo_url as band_logo_url
                FROM refresh_tokens rt
                JOIN users u ON u.id = rt.user_id
+          LEFT JOIN bands b ON u.band_id = b.id
               WHERE rt.token_hash = :hash
               LIMIT 1"
         );
