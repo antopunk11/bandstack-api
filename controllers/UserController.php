@@ -21,7 +21,8 @@ class UserController
     {
         AuthMiddleware::handle();
         $user = AuthMiddleware::getCurrentUser();
-        $users = $this->userModel->findAll($user['band_id']);
+        $bandId = $user['role'] === 'superadmin' ? null : $user['band_id'];
+        $users = $this->userModel->findAll($bandId);
         Response::success($users);
     }
 
@@ -51,10 +52,10 @@ class UserController
             Response::error('Datos de entrada inválidos.', 422, $errors);
         }
 
-        $body['band_id'] = $currentUser['band_id'];
+        $body['band_id'] = ($currentUser['role'] === 'superadmin' && !empty($body['band_id'])) ? (int) $body['band_id'] : $currentUser['band_id'];
         try {
             $userId = $this->userModel->create($body);
-            $newUser = $this->userModel->findById($userId, $currentUser['band_id']);
+            $newUser = $this->userModel->findById($userId, $currentUser['role'] === 'superadmin' ? null : $currentUser['band_id']);
             Response::success($newUser, 'Usuario creado correctamente.', 201);
         } catch (Exception $e) {
             Response::error('Error al crear el usuario.', 500);
@@ -75,11 +76,12 @@ class UserController
 
         $currentUser = AuthMiddleware::getCurrentUser();
 
+        $body['band_id'] = ($currentUser['role'] === 'superadmin' && !empty($body['band_id'])) ? (int) $body['band_id'] : $currentUser['band_id'];
         try {
             // Al actualizar aseguramos que el ID pertenece a la banda del admin
             // En un entorno de producción, aquí verificaríamos primero si el usuario a editar pertenece a band_id
             $this->userModel->update((int) $body['id'], $body); 
-            $updatedUser = $this->userModel->findById((int) $body['id'], $currentUser['band_id']);
+            $updatedUser = $this->userModel->findById((int) $body['id'], $currentUser['role'] === 'superadmin' ? null : $currentUser['band_id']);
             Response::success($updatedUser, 'Usuario actualizado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al actualizar el usuario.', 500);

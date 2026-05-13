@@ -15,15 +15,20 @@ class User
     // ---------------------------------------------------------
     // Obtiene todos los usuarios
     // ---------------------------------------------------------
-    public function findAll(int $bandId): array
+    public function findAll(?int $bandId = null): array
     {
-        $stmt = $this->db->prepare(
-            "SELECT id, band_id, name, email, role, avatar_url, is_active, created_at 
-               FROM users
-              WHERE band_id = :band_id
-              ORDER BY created_at DESC"
-        );
-        $stmt->execute([':band_id' => $bandId]);
+        $sql = "SELECT u.id, u.band_id, b.name as band_name, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at 
+                  FROM users u
+             LEFT JOIN bands b ON u.band_id = b.id ";
+        
+        if ($bandId !== null) {
+            $sql .= "WHERE u.band_id = :band_id ";
+            $stmt = $this->db->prepare($sql . "ORDER BY u.created_at DESC");
+            $stmt->execute([':band_id' => $bandId]);
+        } else {
+            $stmt = $this->db->query($sql . "ORDER BY u.created_at DESC");
+        }
+        
         return $stmt->fetchAll() ?: [];
     }
 
@@ -47,15 +52,22 @@ class User
     // ---------------------------------------------------------
     // Busca un usuario por ID (sin devolver el hash)
     // ---------------------------------------------------------
-    public function findById(int $id, int $bandId): ?array
+    public function findById(int $id, ?int $bandId = null): ?array
     {
-        $stmt = $this->db->prepare(
-            "SELECT id, band_id, name, email, role, avatar_url, is_active, created_at
-               FROM users
-              WHERE id = :id AND band_id = :band_id
-              LIMIT 1"
-        );
-        $stmt->execute([':id' => $id, ':band_id' => $bandId]);
+        $sql = "SELECT u.id, u.band_id, b.name as band_name, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at
+                  FROM users u
+             LEFT JOIN bands b ON u.band_id = b.id
+                 WHERE u.id = :id";
+                 
+        $params = [':id' => $id];
+        
+        if ($bandId !== null) {
+            $sql .= " AND u.band_id = :band_id";
+            $params[':band_id'] = $bandId;
+        }
+
+        $stmt = $this->db->prepare($sql . " LIMIT 1");
+        $stmt->execute($params);
 
         $user = $stmt->fetch();
         return $user ?: null;
@@ -156,11 +168,12 @@ class User
     {
         $stmt = $this->db->prepare(
             "UPDATE users 
-                SET name = :name, email = :email, role = :role, is_active = :is_active 
+                SET band_id = :band_id, name = :name, email = :email, role = :role, is_active = :is_active 
               WHERE id = :id"
         );
         $stmt->execute([
             ':id'        => $id,
+            ':band_id'   => $data['band_id'],
             ':name'      => $data['name'],
             ':email'     => strtolower(trim($data['email'])),
             ':role'      => $data['role'],
