@@ -133,9 +133,20 @@ class Event
         $stmtProducts->execute([':event_id' => $eventId]);
         $products = $stmtProducts->fetchAll();
 
+        // 3. Total de gastos asociados al evento
+        // Asumimos que la tabla se llama 'expenses' y tiene 'amount' y 'event_id'
+        $stmtExpenses = $this->db->prepare(
+            "SELECT COALESCE(SUM(amount), 0) as total_expenses
+               FROM expenses
+              WHERE event_id = :event_id"
+        );
+        $stmtExpenses->execute([':event_id' => $eventId]);
+        $totalExpenses = $stmtExpenses->fetchColumn() ?: 0.0;
+
         return [
             'totals'   => $totals,
-            'products' => $products
+            'products' => $products,
+            'expenses' => (float) $totalExpenses
         ];
     }
 }
