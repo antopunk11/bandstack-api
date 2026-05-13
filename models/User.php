@@ -13,6 +13,19 @@ class User
     }
 
     // ---------------------------------------------------------
+    // Obtiene todos los usuarios
+    // ---------------------------------------------------------
+    public function findAll(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT id, name, email, role, avatar_url, is_active, created_at 
+               FROM users 
+              ORDER BY created_at DESC"
+        );
+        return $stmt->fetchAll() ?: [];
+    }
+
+    // ---------------------------------------------------------
     // Busca un usuario activo por email
     // ---------------------------------------------------------
     public function findByEmail(string $email): ?array
@@ -112,5 +125,52 @@ class User
             "UPDATE users SET password_hash = :hash WHERE id = :id"
         );
         $stmt->execute([':hash' => $newHash, ':id' => $userId]);
+    }
+
+    // ---------------------------------------------------------
+    // Crea un nuevo usuario
+    // ---------------------------------------------------------
+    public function create(array $data): int
+    {
+        $stmt = $this->db->prepare(
+            "INSERT INTO users (name, email, password_hash, role, is_active)
+             VALUES (:name, :email, :password_hash, :role, :is_active)"
+        );
+        $stmt->execute([
+            ':name'          => $data['name'],
+            ':email'         => strtolower(trim($data['email'])),
+            ':password_hash' => password_hash($data['password'], PASSWORD_BCRYPT),
+            ':role'          => $data['role'] ?? 'member',
+            ':is_active'     => $data['is_active'] ?? 1,
+        ]);
+        return (int) $this->db->lastInsertId();
+    }
+
+    // ---------------------------------------------------------
+    // Actualiza datos básicos de un usuario (rol, nombre, estado)
+    // ---------------------------------------------------------
+    public function update(int $id, array $data): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users 
+                SET name = :name, email = :email, role = :role, is_active = :is_active 
+              WHERE id = :id"
+        );
+        $stmt->execute([
+            ':id'        => $id,
+            ':name'      => $data['name'],
+            ':email'     => strtolower(trim($data['email'])),
+            ':role'      => $data['role'],
+            ':is_active' => (int) $data['is_active']
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // Elimina un usuario
+    // ---------------------------------------------------------
+    public function delete(int $id): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
     }
 }
