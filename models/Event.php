@@ -15,28 +15,30 @@ class Event
     // ---------------------------------------------------------
     // Obtiene todos los eventos ordenados por fecha descendente
     // ---------------------------------------------------------
-    public function findAll(): array
+    public function findAll(int $bandId): array
     {
-        $stmt = $this->db->query(
+        $stmt = $this->db->prepare(
             "SELECT id, name, venue, city, country, event_date, type, status, cache_amount, created_at
                FROM events
+              WHERE band_id = :band_id
               ORDER BY event_date DESC"
         );
+        $stmt->execute([':band_id' => $bandId]);
         return $stmt->fetchAll() ?: [];
     }
 
     // ---------------------------------------------------------
     // Busca un evento por ID
     // ---------------------------------------------------------
-    public function findById(int $id): ?array
+    public function findById(int $id, int $bandId): ?array
     {
         $stmt = $this->db->prepare(
             "SELECT id, name, venue, city, country, event_date, type, status, cache_amount, created_at
                FROM events
-              WHERE id = :id
+              WHERE id = :id AND band_id = :band_id
               LIMIT 1"
         );
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, ':band_id' => $bandId]);
 
         $event = $stmt->fetch();
         return $event ?: null;
@@ -48,11 +50,12 @@ class Event
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO events (name, venue, event_date, type, cache_amount, created_by)
-             VALUES (:name, :venue, :event_date, :type, :cache_amount, :created_by)"
+            "INSERT INTO events (band_id, name, venue, event_date, type, cache_amount, created_by)
+             VALUES (:band_id, :name, :venue, :event_date, :type, :cache_amount, :created_by)"
         );
         
         $stmt->execute([
+            ':band_id'      => $data['band_id'],
             ':name'         => $data['name'],
             ':venue'        => $data['venue'],
             ':event_date'   => $data['event_date'],
@@ -153,39 +156,45 @@ class Event
     // ---------------------------------------------------------
     // Obtiene un resumen financiero global (Histórico de Gira)
     // ---------------------------------------------------------
-    public function getGlobalSummary(): array
+    public function getGlobalSummary(int $bandId): array
     {
         // 1. Totales históricos por método de pago
-        $stmtTotals = $this->db->query(
+        $stmtTotals = $this->db->prepare(
             "SELECT payment_method, COUNT(id) as tickets, COALESCE(SUM(total_amount), 0) as total
                FROM sales
+              WHERE band_id = :band_id
               GROUP BY payment_method"
         );
+        $stmtTotals->execute([':band_id' => $bandId]);
         $totals = $stmtTotals->fetchAll();
 
         // 2. Top 10 Productos más vendidos históricamente
-        $stmtProducts = $this->db->query(
+        $stmtProducts = $this->db->prepare(
             "SELECT p.name, v.attribute, SUM(si.quantity) as qty, COALESCE(SUM(si.quantity * si.unit_price), 0) as revenue
                FROM sale_items si
                JOIN sales s ON s.id = si.sale_id
                JOIN variants v ON v.id = si.variant_id
                JOIN products p ON p.id = v.product_id
+              WHERE s.band_id = :band_id
               GROUP BY v.id
               ORDER BY qty DESC
               LIMIT 10"
         );
+        $stmtProducts->execute([':band_id' => $bandId]);
         $products = $stmtProducts->fetchAll();
 
         // 3. Total de gastos históricos
-        $stmtExpenses = $this->db->query(
-            "SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses"
+        $stmtExpenses = $this->db->prepare(
+            "SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE band_id = :band_id"
         );
+        $stmtExpenses->execute([':band_id' => $bandId]);
         $totalExpenses = $stmtExpenses->fetchColumn() ?: 0.0;
 
         // 4. Total de caché histórico cobrado por la banda
-        $stmtCache = $this->db->query(
-            "SELECT COALESCE(SUM(cache_amount), 0) as total_cache FROM events"
+        $stmtCache = $this->db->prepare(
+            "SELECT COALESCE(SUM(cache_amount), 0) as total_cache FROM events WHERE band_id = :band_id"
         );
+        $stmtCache->execute([':band_id' => $bandId]);
         $totalCache = $stmtCache->fetchColumn() ?: 0.0;
 
         return [

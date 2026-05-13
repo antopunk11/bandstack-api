@@ -27,11 +27,19 @@ class AuthMiddleware
                 Response::unauthorized('Tipo de token inválido.');
             }
 
+            // Consultamos la base de datos para obtener el band_id actualizado.
+            // Así evitamos forzar a todos los usuarios a iniciar sesión de nuevo.
+            $db = Database::getInstance();
+            $stmt = $db->prepare("SELECT band_id FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => (int) $payload['sub']]);
+            $bandId = $stmt->fetchColumn() ?: 1;
+
             // Guardar usuario en memoria para uso posterior
             self::$currentUser = [
                 'id'   => (int) $payload['sub'],
                 'role' => $payload['role'],
                 'name' => $payload['name'],
+                'band_id' => (int) $bandId,
             ];
 
         } catch (InvalidArgumentException $e) {

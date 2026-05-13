@@ -18,8 +18,9 @@ class Sale
 
         try {
             // 1. Cabecera del ticket
-            $stmt = $this->db->prepare("INSERT INTO sales (event_id, total_amount, payment_method, sold_by) VALUES (:event_id, :total, :method, :user)");
+            $stmt = $this->db->prepare("INSERT INTO sales (band_id, event_id, total_amount, payment_method, sold_by) VALUES (:band_id, :event_id, :total, :method, :user)");
             $stmt->execute([
+                ':band_id'  => $data['band_id'],
                 ':event_id' => $data['event_id'],
                 ':total'    => $data['total_amount'],
                 ':method'   => $data['payment_method'],

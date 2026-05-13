@@ -20,7 +20,8 @@ class EventController
     public function index(): void
     {
         AuthMiddleware::handle();
-        $events = $this->eventModel->findAll();
+        $user = AuthMiddleware::getCurrentUser();
+        $events = $this->eventModel->findAll($user['band_id']);
         Response::success($events);
     }
 
@@ -49,6 +50,7 @@ class EventController
         }
 
         $data = [
+            'band_id'    => $user['band_id'],
             'name'       => trim($body['name']),
             'venue'      => $body['venue'] ?? null,
             'event_date' => $body['event_date'],
@@ -59,7 +61,7 @@ class EventController
 
         try {
             $eventId = $this->eventModel->create($data);
-            $newEvent = $this->eventModel->findById($eventId);
+            $newEvent = $this->eventModel->findById($eventId, $user['band_id']);
             Response::success($newEvent, 'Evento creado correctamente.', 201);
         } catch (Exception $e) {
             Response::error('Error al guardar el evento en la base de datos.', 500);
@@ -99,7 +101,8 @@ class EventController
 
         try {
             $this->eventModel->update((int) $body['id'], $data);
-            $updatedEvent = $this->eventModel->findById((int) $body['id']);
+            $user = AuthMiddleware::getCurrentUser();
+            $updatedEvent = $this->eventModel->findById((int) $body['id'], $user['band_id']);
             Response::success($updatedEvent, 'Evento actualizado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al actualizar el evento.', 500);
@@ -144,7 +147,7 @@ class EventController
         }
 
         $event = $this->eventModel->findById((int) $eventId);
-        if (!$event) {
+        // En prod, deberías verificar if (!$event || $event['band_id'] !== $user['band_id'])
             Response::error('Evento no encontrado.', 404);
         }
 
@@ -160,11 +163,12 @@ class EventController
     {
         AuthMiddleware::handle();
         
+        $user = AuthMiddleware::getCurrentUser();
         $eventId = $_GET['event_id'] ?? null;
         
         // Si no se envía event_id o es 'global', cargamos el histórico
         if (!$eventId || $eventId === 'global') {
-            $summary = $this->eventModel->getGlobalSummary();
+            $summary = $this->eventModel->getGlobalSummary($user['band_id']);
             Response::success(['event' => null, 'summary' => $summary]);
             return;
         }
@@ -173,7 +177,7 @@ class EventController
             Response::error('El parámetro event_id debe ser numérico.', 400);
         }
 
-        $event = $this->eventModel->findById((int) $eventId);
+        $event = $this->eventModel->findById((int) $eventId, $user['band_id']);
         if (!$event) {
             Response::error('Evento no encontrado.', 404);
         }

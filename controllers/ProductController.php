@@ -21,7 +21,8 @@ class ProductController
     {
         AuthMiddleware::handle();
 
-        $products = $this->productModel->findAll();
+        $user = AuthMiddleware::getCurrentUser();
+        $products = $this->productModel->findAll($user['band_id']);
         Response::success($products);
     }
 
@@ -52,6 +53,7 @@ class ProductController
 
         // 2. Preparar el payload aplicando valores por defecto seguros
         $data = [
+            'band_id'         => $user['band_id'],
             'category_id'     => (int) $body['category_id'],
             'name'            => trim($body['name']),
             'description'     => $body['description'] ?? null,
@@ -65,7 +67,7 @@ class ProductController
         try {
             // 3. Crear registro
             $productId = $this->productModel->create($data);
-            $newProduct = $this->productModel->findById($productId);
+            $newProduct = $this->productModel->findById($productId, $user['band_id']);
             
             Response::success($newProduct, 'Producto creado correctamente.', 201);
         } catch (PDOException $e) {
@@ -84,6 +86,7 @@ class ProductController
         AuthMiddleware::requireRole('admin');
 
         $body = $this->getJsonBody();
+        $user = AuthMiddleware::getCurrentUser();
         if (empty($body['id'])) Response::error('El ID del producto es obligatorio.', 400);
         if (empty($body['name'])) Response::error('El nombre es obligatorio.', 422);
 
@@ -97,7 +100,7 @@ class ProductController
 
         try {
             $this->productModel->update((int) $body['id'], $data);
-            $updatedProduct = $this->productModel->findById((int) $body['id']);
+            $updatedProduct = $this->productModel->findById((int) $body['id'], $user['band_id']);
             Response::success($updatedProduct, 'Producto actualizado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al actualizar el producto.', 500);

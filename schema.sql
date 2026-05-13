@@ -8,21 +8,34 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- -------------------------------------------------------------
+-- BANDS (Grupos / Tenants)
+-- -------------------------------------------------------------
+CREATE TABLE `bands` (
+    `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    `name`          VARCHAR(255)    NOT NULL,
+    `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
 -- USERS
--- Roles: 'admin' | 'member'
+-- Roles: 'superadmin' | 'admin' | 'member'
 -- -------------------------------------------------------------
 CREATE TABLE `users` (
     `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    `band_id`       INT UNSIGNED    NOT NULL DEFAULT 1,
     `name`          VARCHAR(100)    NOT NULL,
     `email`         VARCHAR(150)    NOT NULL,
     `password_hash` VARCHAR(255)    NOT NULL,
-    `role`          ENUM('admin','member') NOT NULL DEFAULT 'member',
+    `role`          ENUM('superadmin','admin','member') NOT NULL DEFAULT 'member',
     `avatar_url`    VARCHAR(255)    NULL,
     `is_active`     TINYINT(1)      NOT NULL DEFAULT 1,
     `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_users_email` (`email`)
+    UNIQUE KEY `uq_users_email` (`email`),
+    KEY `idx_users_band` (`band_id`),
+    CONSTRAINT `fk_users_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------------
@@ -224,13 +237,17 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- SEED DATA — Categorías base y usuario admin inicial
 -- Contraseña del admin: "BandStack2025!" (cámbiala tras el primer login)
 -- =============================================================
+INSERT INTO `bands` (`id`, `name`) VALUES
+    (1, 'Banda Principal');
+
 INSERT INTO `categories` (`name`, `slug`) VALUES
     ('Ropa',        'ropa'),
     ('Música',      'musica'),
     ('Accesorios',  'accesorios');
 
-INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) VALUES
-    ('Admin BandStack',
+INSERT INTO `users` (`band_id`, `name`, `email`, `password_hash`, `role`) VALUES
+    (1, 
+     'SuperAdmin BandStack',
      'admin@bandstack.local',
      '$2y$12$placeholder_run_hash_script',  -- Ver instrucciones en README
-     'admin');
+     'superadmin');

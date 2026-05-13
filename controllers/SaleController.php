@@ -33,6 +33,7 @@ class SaleController
         }
 
         $data = [
+            'band_id'        => $user['band_id'],
             'event_id'       => $eventId,
             'total_amount'   => (float) $body['total_amount'],
             'payment_method' => $body['payment_method'], // cash, card, bizum

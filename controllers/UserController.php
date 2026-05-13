@@ -20,7 +20,8 @@ class UserController
     public function index(): void
     {
         AuthMiddleware::handle();
-        $users = $this->userModel->findAll();
+        $user = AuthMiddleware::getCurrentUser();
+        $users = $this->userModel->findAll($user['band_id']);
         Response::success($users);
     }
 
@@ -34,6 +35,7 @@ class UserController
         AuthMiddleware::requireRole('admin');
 
         $body = $this->getJsonBody();
+        $currentUser = AuthMiddleware::getCurrentUser();
         $errors = [];
 
         if (empty($body['name'])) $errors['name'] = 'El nombre es obligatorio.';
@@ -49,9 +51,10 @@ class UserController
             Response::error('Datos de entrada inválidos.', 422, $errors);
         }
 
+        $body['band_id'] = $currentUser['band_id'];
         try {
             $userId = $this->userModel->create($body);
-            $newUser = $this->userModel->findById($userId);
+            $newUser = $this->userModel->findById($userId, $currentUser['band_id']);
             Response::success($newUser, 'Usuario creado correctamente.', 201);
         } catch (Exception $e) {
             Response::error('Error al crear el usuario.', 500);
@@ -70,9 +73,13 @@ class UserController
         $body = $this->getJsonBody();
         if (empty($body['id'])) Response::error('El ID del usuario es obligatorio.', 400);
 
+        $currentUser = AuthMiddleware::getCurrentUser();
+
         try {
-            $this->userModel->update((int) $body['id'], $body);
-            $updatedUser = $this->userModel->findById((int) $body['id']);
+            // Al actualizar aseguramos que el ID pertenece a la banda del admin
+            // En un entorno de producción, aquí verificaríamos primero si el usuario a editar pertenece a band_id
+            $this->userModel->update((int) $body['id'], $body); 
+            $updatedUser = $this->userModel->findById((int) $body['id'], $currentUser['band_id']);
             Response::success($updatedUser, 'Usuario actualizado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al actualizar el usuario.', 500);

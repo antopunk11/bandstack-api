@@ -38,6 +38,7 @@ spl_autoload_register(function (string $class): void {
         // Middleware
         'AuthMiddleware'  => __DIR__ . '/middleware/AuthMiddleware.php',
         // Models
+        'Band'            => __DIR__ . '/models/Band.php',
         'User'            => __DIR__ . '/models/User.php',
         'Product'         => __DIR__ . '/models/Product.php',
         'Variant'         => __DIR__ . '/models/Variant.php',
@@ -46,7 +47,9 @@ spl_autoload_register(function (string $class): void {
         'Sale'            => __DIR__ . '/models/Sale.php',
         'Expense'         => __DIR__ . '/models/Expense.php',
         // Controllers
+        'BandController'  => __DIR__ . '/controllers/BandController.php',
         'AuthController'  => __DIR__ . '/controllers/AuthController.php',
+        'UserController'  => __DIR__ . '/controllers/UserController.php',
         'ProductController' => __DIR__ . '/controllers/ProductController.php',
         'VariantController' => __DIR__ . '/controllers/VariantController.php',
         'StockMovementController' => __DIR__ . '/controllers/StockMovementController.php',
@@ -98,8 +101,14 @@ $routes = [
     ['GET',    '/auth/me',      'AuthController', 'me'],
 
     // Próximas fases — descomenta según se implementen:
-    // ['GET',  '/users',           'UserController', 'index'],
-    // ['POST', '/users',           'UserController', 'store'],
+    ['GET',  '/bands',           'BandController', 'index'],
+    ['POST', '/bands',           'BandController', 'store'],
+    ['PUT',  '/bands',           'BandController', 'update'],
+    ['DELETE','/bands',          'BandController', 'destroy'],
+    ['GET',  '/users',           'UserController', 'index'],
+    ['POST', '/users',           'UserController', 'store'],
+    ['PUT',  '/users',           'UserController', 'update'],
+    ['DELETE','/users',          'UserController', 'destroy'],
     ['GET',  '/products',        'ProductController', 'index'],
     ['POST', '/products',        'ProductController', 'store'],
     ['PUT',  '/products',        'ProductController', 'update'],

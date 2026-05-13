@@ -15,13 +15,15 @@ class User
     // ---------------------------------------------------------
     // Obtiene todos los usuarios
     // ---------------------------------------------------------
-    public function findAll(): array
+    public function findAll(int $bandId): array
     {
-        $stmt = $this->db->query(
-            "SELECT id, name, email, role, avatar_url, is_active, created_at 
-               FROM users 
+        $stmt = $this->db->prepare(
+            "SELECT id, band_id, name, email, role, avatar_url, is_active, created_at 
+               FROM users
+              WHERE band_id = :band_id
               ORDER BY created_at DESC"
         );
+        $stmt->execute([':band_id' => $bandId]);
         return $stmt->fetchAll() ?: [];
     }
 
@@ -31,7 +33,7 @@ class User
     public function findByEmail(string $email): ?array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, name, email, password_hash, role, is_active
+            "SELECT id, band_id, name, email, password_hash, role, is_active
                FROM users
               WHERE email = :email
               LIMIT 1"
@@ -45,15 +47,15 @@ class User
     // ---------------------------------------------------------
     // Busca un usuario por ID (sin devolver el hash)
     // ---------------------------------------------------------
-    public function findById(int $id): ?array
+    public function findById(int $id, int $bandId): ?array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, name, email, role, avatar_url, is_active, created_at
+            "SELECT id, band_id, name, email, role, avatar_url, is_active, created_at
                FROM users
-              WHERE id = :id
+              WHERE id = :id AND band_id = :band_id
               LIMIT 1"
         );
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, ':band_id' => $bandId]);
 
         $user = $stmt->fetch();
         return $user ?: null;
@@ -133,10 +135,11 @@ class User
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO users (name, email, password_hash, role, is_active)
-             VALUES (:name, :email, :password_hash, :role, :is_active)"
+            "INSERT INTO users (band_id, name, email, password_hash, role, is_active)
+             VALUES (:band_id, :name, :email, :password_hash, :role, :is_active)"
         );
         $stmt->execute([
+            ':band_id'       => $data['band_id'],
             ':name'          => $data['name'],
             ':email'         => strtolower(trim($data['email'])),
             ':password_hash' => password_hash($data['password'], PASSWORD_BCRYPT),
