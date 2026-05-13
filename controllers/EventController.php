@@ -146,8 +146,10 @@ class EventController
             Response::error('El parámetro event_id es obligatorio.', 400);
         }
 
-        $event = $this->eventModel->findById((int) $eventId);
-        // En prod, deberías verificar if (!$event || $event['band_id'] !== $user['band_id'])
+        $user = AuthMiddleware::getCurrentUser();
+        $event = $this->eventModel->findById((int) $eventId, $user['band_id']);
+        
+        if (!$event) {
             Response::error('Evento no encontrado.', 404);
         }
 

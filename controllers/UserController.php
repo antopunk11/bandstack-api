@@ -98,6 +98,11 @@ class UserController
         $id = $_GET['id'] ?? null;
         if (!$id || !is_numeric($id)) Response::error('El ID es obligatorio.', 400);
 
+        $currentUser = AuthMiddleware::getCurrentUser();
+        if ((int)$id === $currentUser['id']) {
+            Response::error('Por seguridad, no puedes eliminar tu propia cuenta.', 403);
+        }
+
         $this->userModel->delete((int) $id);
         Response::success(null, 'Usuario eliminado correctamente.');
     }

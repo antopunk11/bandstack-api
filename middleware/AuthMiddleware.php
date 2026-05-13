@@ -55,6 +55,11 @@ class AuthMiddleware
     {
         $user = self::getCurrentUser();
 
+        // Un superadmin tiene permisos absolutos, dejamos que pase cualquier validación
+        if ($user['role'] === 'superadmin') {
+            return;
+        }
+
         if (!in_array($user['role'], $roles, true)) {
             Response::forbidden('Tu rol no tiene acceso a esta operación.');
         }
