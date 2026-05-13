@@ -190,18 +190,25 @@ class Event
         $stmtExpenses->execute([':band_id' => $bandId]);
         $totalExpenses = $stmtExpenses->fetchColumn() ?: 0.0;
 
-        // 4. Total de caché histórico cobrado por la banda
+        // 4. Total de caché histórico cobrado y pendiente por la banda
         $stmtCache = $this->db->prepare(
-            "SELECT COALESCE(SUM(cache_amount), 0) as total_cache FROM events WHERE band_id = :band_id"
+            "SELECT 
+                COALESCE(SUM(CASE WHEN event_date <= CURDATE() THEN cache_amount ELSE 0 END), 0) as collected_cache,
+                COALESCE(SUM(CASE WHEN event_date > CURDATE() THEN cache_amount ELSE 0 END), 0) as pending_cache
+             FROM events WHERE band_id = :band_id"
         );
         $stmtCache->execute([':band_id' => $bandId]);
-        $totalCache = $stmtCache->fetchColumn() ?: 0.0;
+        $cacheData = $stmtCache->fetch();
+        $totalCollectedCache = $cacheData['collected_cache'] ?? 0.0;
+        $totalPendingCache = $cacheData['pending_cache'] ?? 0.0;
 
         return [
             'totals'   => $totals,
             'products' => $products,
             'expenses' => (float) $totalExpenses,
-            'cache'    => (float) $totalCache
+            'cache'    => (float) $totalCollectedCache, // Se mantiene por retrocompatibilidad
+            'collected_cache' => (float) $totalCollectedCache,
+            'pending_cache'   => (float) $totalPendingCache
         ];
     }
 }
