@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // controllers/ExpenseController.php
-// Endpoints: GET /expenses | POST /expenses
+// Endpoints: GET /expenses | POST /expenses | PUT /expenses
 // =============================================================
 
 class ExpenseController
@@ -52,6 +52,7 @@ class ExpenseController
             'amount'        => (float) $body['amount'],
             'description'   => $body['description'] ?? null,
             'expense_date'  => $body['expense_date'],
+            'is_paid'       => isset($body['is_paid']) ? (int) $body['is_paid'] : 0,
             'created_by'    => $user['id'],
         ];
 
@@ -61,6 +62,32 @@ class ExpenseController
             Response::success(['id' => $expenseId], 'Gasto registrado correctamente.', 201);
         } catch (Exception $e) {
             Response::error('Error al registrar el gasto.', 500);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // PUT /api/v1/expenses
+    // Actualiza un gasto (Acceso: admin y member)
+    // ---------------------------------------------------------
+    public function update(): void
+    {
+        AuthMiddleware::handle();
+        $body = $this->getJsonBody();
+        $user = AuthMiddleware::getCurrentUser();
+
+        if (empty($body['id'])) {
+            Response::error('El ID del gasto es obligatorio.', 400);
+        }
+
+        $data = [
+            'is_paid' => isset($body['is_paid']) ? (int) $body['is_paid'] : 0
+        ];
+
+        try {
+            $this->expenseModel->update((int) $body['id'], $data, $user['band_id']);
+            Response::success(null, 'Gasto actualizado correctamente.');
+        } catch (Exception $e) {
+            Response::error('Error al actualizar el gasto.', 500);
         }
     }
 

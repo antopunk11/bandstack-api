@@ -201,6 +201,7 @@ CREATE TABLE `expenses` (
     `amount`        DECIMAL(10,2)   NOT NULL,
     `receipt_url`   VARCHAR(255)    NULL        COMMENT 'Foto del ticket subida',
     `expense_date`  DATE            NOT NULL,
+    `is_paid`       TINYINT(1)      NOT NULL DEFAULT 0 COMMENT '0 = Pendiente, 1 = Pagado',
     `created_by`    INT UNSIGNED    NOT NULL,
     `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
