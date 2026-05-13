@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // controllers/ExpenseController.php
-// Endpoints: GET /expenses | POST /expenses | PUT /expenses
+// Endpoints: GET /expenses | POST /expenses | PUT /expenses | DELETE /expenses
 // =============================================================
 
 class ExpenseController
@@ -50,7 +50,7 @@ class ExpenseController
             'event_id'      => !empty($body['event_id']) ? (int) $body['event_id'] : null,
             'category'      => trim($body['category']),
             'amount'        => (float) $body['amount'],
-            'description'   => $body['description'] ?? null,
+            'description'   => trim($body['description'] ?? ''),
             'expense_date'  => $body['expense_date'],
             'is_paid'       => isset($body['is_paid']) ? (int) $body['is_paid'] : 0,
             'created_by'    => $user['id'],
@@ -79,8 +79,23 @@ class ExpenseController
             Response::error('El ID del gasto es obligatorio.', 400);
         }
 
+        $existing = $this->expenseModel->findById((int) $body['id'], $user['band_id']);
+        if (!$existing) {
+            Response::error('Gasto no encontrado.', 404);
+        }
+
+        // Comprobación de permisos: admin, superadmin, o el creador
+        if (!in_array($user['role'], ['admin', 'superadmin']) && $existing['created_by'] !== $user['id']) {
+            Response::error('No tienes permiso para editar este gasto.', 403);
+        }
+
         $data = [
-            'is_paid' => isset($body['is_paid']) ? (int) $body['is_paid'] : 0
+            'event_id'     => array_key_exists('event_id', $body) ? ($body['event_id'] ? (int)$body['event_id'] : null) : $existing['event_id'],
+            'category'     => $body['category'] ?? $existing['category'],
+            'amount'       => isset($body['amount']) ? (float) $body['amount'] : (float)$existing['amount'],
+            'description'  => isset($body['description']) ? trim($body['description']) : ($existing['description'] ?? ''),
+            'expense_date' => $body['expense_date'] ?? $existing['expense_date'],
+            'is_paid'      => isset($body['is_paid']) ? (int) $body['is_paid'] : (int)$existing['is_paid']
         ];
 
         try {
@@ -88,6 +103,38 @@ class ExpenseController
             Response::success(null, 'Gasto actualizado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al actualizar el gasto.', 500);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // DELETE /api/v1/expenses?id=X
+    // Elimina un gasto (Acceso: admin, superadmin o creador)
+    // ---------------------------------------------------------
+    public function destroy(): void
+    {
+        AuthMiddleware::handle();
+        $user = AuthMiddleware::getCurrentUser();
+
+        $id = $_GET['id'] ?? null;
+        if (!$id || !is_numeric($id)) {
+            Response::error('El ID del gasto es obligatorio.', 400);
+        }
+
+        $existing = $this->expenseModel->findById((int) $id, $user['band_id']);
+        if (!$existing) {
+            Response::error('Gasto no encontrado.', 404);
+        }
+
+        // Comprobación de permisos: admin, superadmin, o el creador
+        if (!in_array($user['role'], ['admin', 'superadmin']) && $existing['created_by'] !== $user['id']) {
+            Response::error('No tienes permiso para eliminar este gasto.', 403);
+        }
+
+        try {
+            $this->expenseModel->delete((int) $id, $user['band_id']);
+            Response::success(null, 'Gasto eliminado correctamente.');
+        } catch (Exception $e) {
+            Response::error('Error al eliminar el gasto.', 500);
         }
     }
 

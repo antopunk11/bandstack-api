@@ -19,7 +19,7 @@ class Expense
     {
         $stmt = $this->db->prepare(
             "SELECT e.id, e.event_id, ev.name as event_name, e.category, e.amount,
-                    e.description, e.expense_date, e.is_paid, u.name as user_name
+                    e.description, e.expense_date, e.is_paid, u.name as user_name, e.created_by
                FROM expenses e
                LEFT JOIN events ev ON e.event_id = ev.id
                LEFT JOIN users u ON e.created_by = u.id
@@ -28,6 +28,18 @@ class Expense
         );
         $stmt->execute([':band_id' => $bandId]);
         return $stmt->fetchAll() ?: [];
+    }
+
+    // ---------------------------------------------------------
+    // Busca un gasto por ID
+    // ---------------------------------------------------------
+    public function findById(int $id, int $bandId): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM expenses WHERE id = :id AND band_id = :band_id LIMIT 1"
+        );
+        $stmt->execute([':id' => $id, ':band_id' => $bandId]);
+        return $stmt->fetch() ?: null;
     }
 
     // ---------------------------------------------------------
@@ -55,18 +67,41 @@ class Expense
     }
 
     // ---------------------------------------------------------
-    // Actualiza un gasto (por ahora permite cambiar el estado de pago)
+    // Actualiza un gasto por completo
     // ---------------------------------------------------------
     public function update(int $id, array $data, int $bandId): void
     {
         $stmt = $this->db->prepare(
-            "UPDATE expenses SET is_paid = :is_paid WHERE id = :id AND band_id = :band_id"
+            "UPDATE expenses 
+                SET event_id = :event_id,
+                    category = :category,
+                    amount = :amount,
+                    description = :description,
+                    expense_date = :expense_date,
+                    is_paid = :is_paid
+              WHERE id = :id AND band_id = :band_id"
         );
         
         $stmt->execute([
-            ':is_paid' => $data['is_paid'] ?? 0,
+            ':event_id'     => $data['event_id'],
+            ':category'     => $data['category'],
+            ':amount'       => $data['amount'],
+            ':description'  => $data['description'],
+            ':expense_date' => $data['expense_date'],
+            ':is_paid'      => $data['is_paid'] ?? 0,
             ':id'      => $id,
             ':band_id' => $bandId
         ]);
+    }
+
+    // ---------------------------------------------------------
+    // Elimina un gasto
+    // ---------------------------------------------------------
+    public function delete(int $id, int $bandId): void
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM expenses WHERE id = :id AND band_id = :band_id"
+        );
+        $stmt->execute([':id' => $id, ':band_id' => $bandId]);
     }
 }

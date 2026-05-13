@@ -126,6 +126,7 @@ $routes = [
     ['GET',  '/expenses',        'ExpenseController', 'index'],
     ['POST', '/expenses',        'ExpenseController', 'store'],
     ['PUT',  '/expenses',        'ExpenseController', 'update'],
+    ['DELETE','/expenses',       'ExpenseController', 'destroy'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controller, $action]) {
