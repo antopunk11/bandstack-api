@@ -149,4 +149,50 @@ class Event
             'expenses' => (float) $totalExpenses
         ];
     }
+
+    // ---------------------------------------------------------
+    // Obtiene un resumen financiero global (Histórico de Gira)
+    // ---------------------------------------------------------
+    public function getGlobalSummary(): array
+    {
+        // 1. Totales históricos por método de pago
+        $stmtTotals = $this->db->query(
+            "SELECT payment_method, COUNT(id) as tickets, COALESCE(SUM(total_amount), 0) as total
+               FROM sales
+              GROUP BY payment_method"
+        );
+        $totals = $stmtTotals->fetchAll();
+
+        // 2. Top 10 Productos más vendidos históricamente
+        $stmtProducts = $this->db->query(
+            "SELECT p.name, v.attribute, SUM(si.quantity) as qty, COALESCE(SUM(si.quantity * si.unit_price), 0) as revenue
+               FROM sale_items si
+               JOIN sales s ON s.id = si.sale_id
+               JOIN variants v ON v.id = si.variant_id
+               JOIN products p ON p.id = v.product_id
+              GROUP BY v.id
+              ORDER BY qty DESC
+              LIMIT 10"
+        );
+        $products = $stmtProducts->fetchAll();
+
+        // 3. Total de gastos históricos
+        $stmtExpenses = $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses"
+        );
+        $totalExpenses = $stmtExpenses->fetchColumn() ?: 0.0;
+
+        // 4. Total de caché histórico cobrado por la banda
+        $stmtCache = $this->db->query(
+            "SELECT COALESCE(SUM(cache_amount), 0) as total_cache FROM events"
+        );
+        $totalCache = $stmtCache->fetchColumn() ?: 0.0;
+
+        return [
+            'totals'   => $totals,
+            'products' => $products,
+            'expenses' => (float) $totalExpenses,
+            'cache'    => (float) $totalCache
+        ];
+    }
 }

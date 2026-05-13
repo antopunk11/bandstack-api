@@ -161,8 +161,16 @@ class EventController
         AuthMiddleware::handle();
         
         $eventId = $_GET['event_id'] ?? null;
-        if (!$eventId || !is_numeric($eventId)) {
-            Response::error('El parámetro event_id es obligatorio.', 400);
+        
+        // Si no se envía event_id o es 'global', cargamos el histórico
+        if (!$eventId || $eventId === 'global') {
+            $summary = $this->eventModel->getGlobalSummary();
+            Response::success(['event' => null, 'summary' => $summary]);
+            return;
+        }
+
+        if (!is_numeric($eventId)) {
+            Response::error('El parámetro event_id debe ser numérico.', 400);
         }
 
         $event = $this->eventModel->findById((int) $eventId);
