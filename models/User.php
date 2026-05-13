@@ -17,7 +17,7 @@ class User
     // ---------------------------------------------------------
     public function findAll(?int $bandId = null): array
     {
-        $sql = "SELECT u.id, u.band_id, b.name as band_name, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at 
+        $sql = "SELECT u.id, u.band_id, b.name as band_name, b.logo_url as band_logo_url, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at 
                   FROM users u
              LEFT JOIN bands b ON u.band_id = b.id ";
         
@@ -54,7 +54,7 @@ class User
     // ---------------------------------------------------------
     public function findById(int $id, ?int $bandId = null): ?array
     {
-        $sql = "SELECT u.id, u.band_id, b.name as band_name, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at
+        $sql = "SELECT u.id, u.band_id, b.name as band_name, b.logo_url as band_logo_url, u.name, u.email, u.role, u.avatar_url, u.is_active, u.created_at
                   FROM users u
              LEFT JOIN bands b ON u.band_id = b.id
                  WHERE u.id = :id";

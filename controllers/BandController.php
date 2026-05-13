@@ -27,13 +27,33 @@ class BandController
         AuthMiddleware::handle();
         AuthMiddleware::requireRole('superadmin');
 
-        $body = $this->getJsonBody();
+        $body = !empty($_POST) ? $_POST : $this->getJsonBody();
         if (empty($body['name'])) {
             Response::error('El nombre de la banda es obligatorio.', 422);
         }
 
+        // Procesar subida de logo
+        $logoUrl = null;
+        if (isset($_FILES['logo_file']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/../uploads/logos/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $ext = strtolower(pathinfo($_FILES['logo_file']['name'], PATHINFO_EXTENSION));
+            $filename = uniqid('logo_') . '.' . $ext;
+            
+            if (move_uploaded_file($_FILES['logo_file']['tmp_name'], $uploadDir . $filename)) {
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                $scriptPath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+                $logoUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . $scriptPath . '/uploads/logos/' . $filename;
+            }
+        }
+
         try {
-            $bandId = $this->bandModel->create(['name' => trim($body['name'])]);
+            $data = ['name' => trim($body['name'])];
+            if ($logoUrl) $data['logo_url'] = $logoUrl;
+
+            $bandId = $this->bandModel->create($data);
             $newBand = $this->bandModel->findById($bandId);
             Response::success($newBand, 'Banda creada correctamente.', 201);
         } catch (Exception $e) {
@@ -46,12 +66,33 @@ class BandController
         AuthMiddleware::handle();
         AuthMiddleware::requireRole('superadmin');
 
-        $body = $this->getJsonBody();
+        // Si llega por FormData (gracias al Method Spoofing), usamos $_POST
+        $body = !empty($_POST) ? $_POST : $this->getJsonBody();
         if (empty($body['id'])) Response::error('El ID de la banda es obligatorio.', 400);
         if (empty($body['name'])) Response::error('El nombre de la banda es obligatorio.', 422);
 
+        // Procesar subida de un nuevo logo si se adjunta
+        $logoUrl = null;
+        if (isset($_FILES['logo_file']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/../uploads/logos/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $ext = strtolower(pathinfo($_FILES['logo_file']['name'], PATHINFO_EXTENSION));
+            $filename = uniqid('logo_') . '.' . $ext;
+            
+            if (move_uploaded_file($_FILES['logo_file']['tmp_name'], $uploadDir . $filename)) {
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                $scriptPath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+                $logoUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . $scriptPath . '/uploads/logos/' . $filename;
+            }
+        }
+
         try {
-            $this->bandModel->update((int) $body['id'], ['name' => trim($body['name'])]);
+            $data = ['name' => trim($body['name'])];
+            if ($logoUrl) $data['logo_url'] = $logoUrl;
+
+            $this->bandModel->update((int) $body['id'], $data);
             $updatedBand = $this->bandModel->findById((int) $body['id']);
             Response::success($updatedBand, 'Banda actualizada correctamente.');
         } catch (Exception $e) {
