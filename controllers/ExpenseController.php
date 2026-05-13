@@ -61,7 +61,7 @@ class ExpenseController
             // Opcional: devolver el gasto recién creado
             Response::success(['id' => $expenseId], 'Gasto registrado correctamente.', 201);
         } catch (Exception $e) {
-            Response::error('Error al registrar el gasto.', 500);
+            Response::error('Error al registrar el gasto: ' . $e->getMessage(), 500);
         }
     }
 
@@ -102,7 +102,7 @@ class ExpenseController
             $this->expenseModel->update((int) $body['id'], $data, $user['band_id']);
             Response::success(null, 'Gasto actualizado correctamente.');
         } catch (Exception $e) {
-            Response::error('Error al actualizar el gasto.', 500);
+            Response::error('Error al actualizar el gasto: ' . $e->getMessage(), 500);
         }
     }
 
@@ -134,7 +134,7 @@ class ExpenseController
             $this->expenseModel->delete((int) $id, $user['band_id']);
             Response::success(null, 'Gasto eliminado correctamente.');
         } catch (Exception $e) {
-            Response::error('Error al eliminar el gasto.', 500);
+            Response::error('Error al eliminar el gasto: ' . $e->getMessage(), 500);
         }
     }
 
