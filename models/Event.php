@@ -239,6 +239,7 @@ class Event
                FROM sales 
               WHERE band_id = :band_id 
                 AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                AND created_at <= DATE_ADD(NOW(), INTERVAL 12 MONTH)
               GROUP BY DATE_FORMAT(created_at, '%Y-%m')"
         );
         $stmtSales->execute([':band_id' => $bandId]);
@@ -250,6 +251,7 @@ class Event
                FROM expenses 
               WHERE band_id = :band_id 
                 AND expense_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                AND expense_date <= DATE_ADD(CURDATE(), INTERVAL 12 MONTH)
               GROUP BY DATE_FORMAT(expense_date, '%Y-%m')"
         );
         $stmtExpenses->execute([':band_id' => $bandId]);
@@ -261,18 +263,19 @@ class Event
                FROM incomes 
               WHERE band_id = :band_id 
                 AND income_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                AND income_date <= DATE_ADD(CURDATE(), INTERVAL 12 MONTH)
               GROUP BY DATE_FORMAT(income_date, '%Y-%m')"
         );
         $stmtIncomes->execute([':band_id' => $bandId]);
         $incomes = $stmtIncomes->fetchAll() ?: [];
 
-        // 4. Cache Cobrado (conciertos realizados)
+        // 4. Cache (conciertos realizados y previstos en el rango de tiempo)
         $stmtCache = $this->db->prepare(
             "SELECT DATE_FORMAT(event_date, '%Y-%m') as month, COALESCE(SUM(cache_amount), 0) as total 
                FROM events 
               WHERE band_id = :band_id 
                 AND event_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-                AND event_date <= CURDATE()
+                AND event_date <= DATE_ADD(CURDATE(), INTERVAL 12 MONTH)
               GROUP BY DATE_FORMAT(event_date, '%Y-%m')"
         );
         $stmtCache->execute([':band_id' => $bandId]);
