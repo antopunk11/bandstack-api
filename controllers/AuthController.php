@@ -43,13 +43,39 @@ class AuthController
         $dummyHash = '$2y$12$invaliddummyhashfortimingprotection0000000000000000000';
         $hash = $user['password_hash'] ?? $dummyHash;
 
+        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
         if (!password_verify($body['password'], $hash) || !$user) {
+            $this->userModel->logAccess(
+                $user ? (int) $user['id'] : null,
+                trim($body['email']),
+                $ipAddress,
+                $userAgent,
+                'failed'
+            );
             Response::error('Credenciales incorrectas.', 401);
         }
 
         if (!$user['is_active']) {
+            $this->userModel->logAccess(
+                (int) $user['id'],
+                trim($body['email']),
+                $ipAddress,
+                $userAgent,
+                'failed'
+            );
             Response::error('Tu cuenta está desactivada. Contacta con el admin.', 403);
         }
+
+        // Registrar acceso exitoso
+        $this->userModel->logAccess(
+            (int) $user['id'],
+            trim($body['email']),
+            $ipAddress,
+            $userAgent,
+            'success'
+        );
 
         // Generar tokens
         $accessToken  = JWT::generateAccessToken([
@@ -79,10 +105,13 @@ class AuthController
             'token_type'    => 'Bearer',
             'expires_in'    => JWT_ACCESS_EXPIRY,
             'user' => [
-                'id'    => $user['id'],
-                'name'  => $user['name'],
-                'email' => $user['email'],
-                'role'  => $user['role'],
+                'id'            => $user['id'],
+                'name'          => $user['name'],
+                'email'         => $user['email'],
+                'role'          => $user['role'],
+                'band_id'       => $user['band_id'] ?? null,
+                'band_name'     => $user['band_name'] ?? null,
+                'band_logo_url' => $user['band_logo_url'] ?? null,
             ],
         ], 'Login correcto.');
     }
@@ -182,6 +211,41 @@ class AuthController
         }
 
         Response::success($user);
+    }
+
+    public function changePassword(): void
+    {
+        AuthMiddleware::handle();
+        $user = AuthMiddleware::getCurrentUser();
+        $body = $this->getJsonBody();
+
+        if (empty($body['current_password']) || empty($body['new_password'])) {
+            Response::error('La contraseña actual y la nueva contraseña son obligatorias.', 422);
+        }
+
+        $currentHash = $this->userModel->getPasswordHash($user['id']);
+        if (!$currentHash || !password_verify($body['current_password'], $currentHash)) {
+            Response::error('La contraseña actual es incorrecta.', 401);
+        }
+
+        if (strlen($body['new_password']) < 6) {
+            Response::error('La nueva contraseña debe tener al menos 6 caracteres.', 422);
+        }
+
+        $newHash = password_hash($body['new_password'], PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
+        $this->userModel->updatePasswordHash($user['id'], $newHash);
+
+        Response::success(null, 'Contraseña actualizada correctamente.');
+    }
+
+    public function accessLogs(): void
+    {
+        AuthMiddleware::handle();
+        AuthMiddleware::requireRole('admin');
+        $user = AuthMiddleware::getCurrentUser();
+
+        $logs = $this->userModel->getAccessLogs($user['band_id']);
+        Response::success($logs);
     }
 
     // ---- Helpers privados -----------------------------------

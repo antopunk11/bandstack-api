@@ -46,6 +46,7 @@ spl_autoload_register(function (string $class): void {
         'Event'           => __DIR__ . '/models/Event.php',
         'Sale'            => __DIR__ . '/models/Sale.php',
         'Expense'         => __DIR__ . '/models/Expense.php',
+        'RecurringExpense'=> __DIR__ . '/models/RecurringExpense.php',
         // Controllers
         'BandController'  => __DIR__ . '/controllers/BandController.php',
         'AuthController'  => __DIR__ . '/controllers/AuthController.php',
@@ -56,6 +57,7 @@ spl_autoload_register(function (string $class): void {
         'EventController' => __DIR__ . '/controllers/EventController.php',
         'SaleController'  => __DIR__ . '/controllers/SaleController.php',
         'ExpenseController'=> __DIR__ . '/controllers/ExpenseController.php',
+        'RecurringExpenseController' => __DIR__ . '/controllers/RecurringExpenseController.php',
     ];
 
     if (isset($map[$class])) {
@@ -105,8 +107,14 @@ $routes = [
     ['POST',   '/auth/refresh', 'AuthController', 'refresh'],
     ['POST',   '/auth/logout',  'AuthController', 'logout'],
     ['GET',    '/auth/me',      'AuthController', 'me'],
+    ['POST',   '/auth/change-password', 'AuthController', 'changePassword'],
+    ['GET',    '/auth/access-logs',     'AuthController', 'accessLogs'],
 
     // Próximas fases — descomenta según se implementen:
+    // --- Configuración de Banda ---
+    ['GET',  '/bands/settings',  'BandController', 'getSettings'],
+    ['PUT',  '/bands/settings',  'BandController', 'updateSettings'],
+
     ['GET',  '/bands',           'BandController', 'index'],
     ['POST', '/bands',           'BandController', 'store'],
     ['PUT',  '/bands',           'BandController', 'update'],
@@ -129,10 +137,17 @@ $routes = [
     ['POST', '/events/close',    'EventController', 'close'],
     ['GET',  '/events/summary',  'EventController', 'summary'],
     ['POST', '/sales',           'SaleController', 'store'],
-    ['GET',  '/expenses',        'ExpenseController', 'index'],
-    ['POST', '/expenses',        'ExpenseController', 'store'],
-    ['PUT',  '/expenses',        'ExpenseController', 'update'],
-    ['DELETE','/expenses',       'ExpenseController', 'destroy'],
+    ['GET',    '/expenses',     'ExpenseController', 'index'],
+    ['POST',   '/expenses',     'ExpenseController', 'store'],
+    ['PUT',    '/expenses',     'ExpenseController', 'update'],
+    ['POST',   '/expenses/bulk-pay', 'ExpenseController', 'bulkPay'],
+    ['DELETE', '/expenses',     'ExpenseController', 'destroy'],
+
+    // --- Gastos Recurrentes ---
+    ['GET',    '/recurring-expenses',    'RecurringExpenseController', 'index'],
+    ['POST',   '/recurring-expenses',    'RecurringExpenseController', 'store'],
+    ['PUT',    '/recurring-expenses',    'RecurringExpenseController', 'update'],
+    ['DELETE', '/recurring-expenses',    'RecurringExpenseController', 'destroy'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controller, $action]) {

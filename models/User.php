@@ -133,6 +133,28 @@ class User
         $stmt->execute([':user_id' => $userId]);
     }
 
+    public function getPasswordHash(int $id): ?string
+    {
+        $stmt = $this->db->prepare("SELECT password_hash FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetchColumn() ?: null;
+    }
+
+    public function logAccess(?int $userId, ?string $emailAttempt, string $ipAddress, ?string $userAgent, string $status): void
+    {
+        $stmt = $this->db->prepare(
+            "INSERT INTO access_logs (user_id, email_attempt, ip_address, user_agent, status)
+             VALUES (:user_id, :email_attempt, :ip_address, :user_agent, :status)"
+        );
+        $stmt->execute([
+            ':user_id'       => $userId,
+            ':email_attempt' => $emailAttempt,
+            ':ip_address'    => $ipAddress,
+            ':user_agent'    => $userAgent,
+            ':status'        => $status
+        ]);
+    }
+
     // ---------------------------------------------------------
     // Actualiza el hash de la contraseña de un usuario
     // ---------------------------------------------------------
@@ -191,5 +213,19 @@ class User
     {
         $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
         $stmt->execute([':id' => $id]);
+    }
+
+    public function getAccessLogs(int $bandId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT al.id, al.user_id, al.email_attempt, al.ip_address, al.user_agent, al.status, al.created_at, u.name as user_name
+               FROM access_logs al
+          LEFT JOIN users u ON al.user_id = u.id
+              WHERE u.band_id = :band_id OR (al.user_id IS NULL AND al.email_attempt IN (SELECT email FROM users WHERE band_id = :band_id))
+           ORDER BY al.created_at DESC
+              LIMIT 100"
+        );
+        $stmt->execute([':band_id' => $bandId]);
+        return $stmt->fetchAll() ?: [];
     }
 }

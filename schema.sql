@@ -13,6 +13,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE `bands` (
     `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
     `name`          VARCHAR(255)    NOT NULL,
+    `settings`      JSON            NULL,
     `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -195,6 +196,7 @@ CREATE TABLE `sale_items` (
 -- -------------------------------------------------------------
 CREATE TABLE `expenses` (
     `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    `band_id`       INT UNSIGNED    NOT NULL DEFAULT 1,
     `event_id`      INT UNSIGNED    NULL,
     `category`      ENUM('diet','fuel','toll','promo','gear','other') NOT NULL DEFAULT 'other',
     `description`   VARCHAR(255)    NOT NULL,
@@ -206,8 +208,11 @@ CREATE TABLE `expenses` (
     `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
+    KEY `idx_expenses_band` (`band_id`),
     KEY `idx_expenses_event` (`event_id`),
     KEY `idx_expenses_date` (`expense_date`),
+    CONSTRAINT `fk_expenses_band`
+        FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_expenses_event`
         FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON UPDATE CASCADE,
     CONSTRAINT `fk_expenses_user`
@@ -230,6 +235,42 @@ CREATE TABLE `refresh_tokens` (
     KEY `idx_rt_hash` (`token_hash`),
     CONSTRAINT `fk_rt_user`
         FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
+-- RECURRING EXPENSES (Plantillas de gastos)
+-- -------------------------------------------------------------
+CREATE TABLE `recurring_expenses` (
+    `id`                INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    `band_id`           INT UNSIGNED    NOT NULL,
+    `category`          ENUM('diet','fuel','toll','promo','gear','other') NOT NULL DEFAULT 'other',
+    `description`       VARCHAR(255)    NOT NULL,
+    `amount`            DECIMAL(10,2)   NOT NULL,
+    `recurrence_type`   ENUM('weekly','monthly','yearly') NOT NULL,
+    `next_due_date`     DATE            NOT NULL,
+    `is_active`         TINYINT(1)      NOT NULL DEFAULT 1,
+    `created_by`        INT UNSIGNED    NOT NULL,
+    `created_at`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_re_band` (`band_id`),
+    CONSTRAINT `fk_re_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_re_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
+-- ACCESS LOGS
+-- -------------------------------------------------------------
+CREATE TABLE `access_logs` (
+    `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    `user_id`       INT UNSIGNED    NULL,
+    `email_attempt` VARCHAR(150)    NULL,
+    `ip_address`    VARCHAR(45)     NOT NULL,
+    `user_agent`    VARCHAR(255)    NULL,
+    `status`        ENUM('success','failed') NOT NULL,
+    `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_al_user` (`user_id`),
+    CONSTRAINT `fk_al_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

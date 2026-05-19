@@ -107,4 +107,29 @@ class Expense
         );
         $stmt->execute([':id' => $id, ':band_id' => $bandId]);
     }
+
+    // ---------------------------------------------------------
+    // Marca múltiples gastos como pagados en lote
+    // ---------------------------------------------------------
+    public function bulkMarkAsPaid(array $ids, int $bandId, int $userId, bool $isAdmin): void
+    {
+        if (empty($ids)) return;
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "UPDATE expenses 
+                   SET is_paid = 1 
+                 WHERE id IN ($placeholders) 
+                   AND band_id = ?";
+
+        $params = $ids;
+        $params[] = $bandId;
+
+        if (!$isAdmin) {
+            $sql .= " AND created_by = ?";
+            $params[] = $userId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+    }
 }

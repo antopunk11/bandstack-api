@@ -20,10 +20,22 @@ class Band
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT id, name, logo_url, created_at FROM bands WHERE id = :id LIMIT 1");
+        $stmt = $this->db->prepare("SELECT id, name, logo_url, settings, created_at FROM bands WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $id]);
         $band = $stmt->fetch();
+        if ($band && isset($band['settings'])) {
+            $band['settings'] = json_decode($band['settings'], true);
+        }
         return $band ?: null;
+    }
+
+    public function updateSettings(int $id, array $settings): void
+    {
+        $stmt = $this->db->prepare("UPDATE bands SET settings = :settings WHERE id = :id");
+        $stmt->execute([
+            ':settings' => json_encode($settings),
+            ':id'       => $id
+        ]);
     }
 
     public function create(array $data): int

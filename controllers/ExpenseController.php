@@ -21,6 +21,11 @@ class ExpenseController
     {
         AuthMiddleware::handle();
         $user = AuthMiddleware::getCurrentUser();
+
+        // Procesar gastos recurrentes vencidos antes de listar
+        $recurringModel = new RecurringExpense();
+        $recurringModel->processRecurringExpenses($user['band_id'], date('Y-m-d'));
+
         $expenses = $this->expenseModel->findAll($user['band_id']);
         Response::success($expenses);
     }
@@ -173,6 +178,31 @@ class ExpenseController
             Response::success(null, 'Gasto eliminado correctamente.');
         } catch (Exception $e) {
             Response::error('Error al eliminar el gasto: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function bulkPay(): void
+    {
+        AuthMiddleware::handle();
+        $user = AuthMiddleware::getCurrentUser();
+        $body = $this->getJsonBody();
+
+        if (empty($body['ids']) || !is_array($body['ids'])) {
+            Response::error('Se requiere un array de IDs de gastos.', 400);
+        }
+
+        $ids = array_map('intval', $body['ids']);
+        if (empty($ids)) {
+            Response::error('Lista de IDs vacía.', 400);
+        }
+
+        $isAdmin = in_array($user['role'], ['admin', 'superadmin']);
+
+        try {
+            $this->expenseModel->bulkMarkAsPaid($ids, $user['band_id'], $user['id'], $isAdmin);
+            Response::success(null, 'Gastos actualizados correctamente.');
+        } catch (Exception $e) {
+            Response::error('Error al actualizar los gastos: ' . $e->getMessage(), 500);
         }
     }
 

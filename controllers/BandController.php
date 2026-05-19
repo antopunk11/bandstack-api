@@ -118,6 +118,47 @@ class BandController
         }
     }
 
+    public function getSettings(): void
+    {
+        AuthMiddleware::handle();
+        $user = AuthMiddleware::getCurrentUser();
+
+        $band = $this->bandModel->findById($user['band_id']);
+        if (!$band) {
+            Response::notFound('Banda no encontrada.');
+        }
+
+        $settings = $band['settings'] ?? [];
+        Response::success($settings);
+    }
+
+    public function updateSettings(): void
+    {
+        AuthMiddleware::handle();
+        AuthMiddleware::requireRole('admin');
+        $user = AuthMiddleware::getCurrentUser();
+
+        $body = $this->getJsonBody();
+        
+        // Validación mínima: si viene mileage_price, convertirlo a float
+        $settings = [];
+        if (isset($body['mileage_price'])) {
+            $settings['mileage_price'] = (float) $body['mileage_price'];
+        }
+        // Guardamos otros posibles ajustes que existan para no sobreescribir con array vacío
+        $band = $this->bandModel->findById($user['band_id']);
+        $currentSettings = $band['settings'] ?? [];
+        
+        $newSettings = array_merge($currentSettings, $settings);
+
+        try {
+            $this->bandModel->updateSettings($user['band_id'], $newSettings);
+            Response::success($newSettings, 'Ajustes actualizados correctamente.');
+        } catch (Exception $e) {
+            Response::error('Error al actualizar los ajustes de la banda.', 500);
+        }
+    }
+
     private function getJsonBody(): array
     {
         $raw = file_get_contents('php://input');
