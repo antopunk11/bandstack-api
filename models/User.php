@@ -221,11 +221,14 @@ class User
             "SELECT al.id, al.user_id, al.email_attempt, al.ip_address, al.user_agent, al.status, al.created_at, u.name as user_name
                FROM access_logs al
           LEFT JOIN users u ON al.user_id = u.id
-              WHERE u.band_id = :band_id OR (al.user_id IS NULL AND al.email_attempt IN (SELECT email FROM users WHERE band_id = :band_id))
+              WHERE u.band_id = :band_id_1 OR (al.user_id IS NULL AND al.email_attempt IN (SELECT email FROM users WHERE band_id = :band_id_2))
            ORDER BY al.created_at DESC
               LIMIT 100"
         );
-        $stmt->execute([':band_id' => $bandId]);
+        $stmt->execute([
+            ':band_id_1' => $bandId,
+            ':band_id_2' => $bandId
+        ]);
         return $stmt->fetchAll() ?: [];
     }
 }
