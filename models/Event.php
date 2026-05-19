@@ -188,7 +188,7 @@ class Event
             "SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses WHERE band_id = :band_id"
         );
         $stmtExpenses->execute([':band_id' => $bandId]);
-        $totalExpenses = $stmtExpenses->fetchColumn() ?: 0.0;
+        $totalExpenses = (float)($stmtExpenses->fetchColumn() ?: 0.0);
 
         // 4. Total de caché histórico cobrado y pendiente por la banda
         $stmtCache = $this->db->prepare(
@@ -202,13 +202,121 @@ class Event
         $totalCollectedCache = $cacheData['collected_cache'] ?? 0.0;
         $totalPendingCache = $cacheData['pending_cache'] ?? 0.0;
 
+        // 5. Total de ingresos extra históricos
+        $stmtIncomes = $this->db->prepare(
+            "SELECT COALESCE(SUM(amount), 0) as total_incomes FROM incomes WHERE band_id = :band_id"
+        );
+        $stmtIncomes->execute([':band_id' => $bandId]);
+        $totalIncomes = (float)($stmtIncomes->fetchColumn() ?: 0.0);
+
+        // Calcular total de ventas
+        $totalSales = 0.0;
+        foreach ($totals as $row) {
+            $totalSales += (float)$row['total'];
+        }
+
         return [
             'totals'   => $totals,
             'products' => $products,
             'expenses' => (float) $totalExpenses,
             'cache'    => (float) $totalCollectedCache, // Se mantiene por retrocompatibilidad
             'collected_cache' => (float) $totalCollectedCache,
-            'pending_cache'   => (float) $totalPendingCache
+            'pending_cache'   => (float) $totalPendingCache,
+            'incomes'  => $totalIncomes,
+            'total_sales' => $totalSales,
+            'net_balance' => ($totalSales + $totalCollectedCache + $totalIncomes) - (float)$totalExpenses
         ];
+    }
+
+    // ---------------------------------------------------------
+    // Obtiene la evolución de flujos mensuales para gráficos
+    // ---------------------------------------------------------
+    public function getMonthlyFlow(int $bandId): array
+    {
+        // 1. Ventas
+        $stmtSales = $this->db->prepare(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COALESCE(SUM(total_amount), 0) as total 
+               FROM sales 
+              WHERE band_id = :band_id 
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+              GROUP BY DATE_FORMAT(created_at, '%Y-%m')"
+        );
+        $stmtSales->execute([':band_id' => $bandId]);
+        $sales = $stmtSales->fetchAll() ?: [];
+
+        // 2. Gastos
+        $stmtExpenses = $this->db->prepare(
+            "SELECT DATE_FORMAT(expense_date, '%Y-%m') as month, COALESCE(SUM(amount), 0) as total 
+               FROM expenses 
+              WHERE band_id = :band_id 
+                AND expense_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+              GROUP BY DATE_FORMAT(expense_date, '%Y-%m')"
+        );
+        $stmtExpenses->execute([':band_id' => $bandId]);
+        $expenses = $stmtExpenses->fetchAll() ?: [];
+
+        // 3. Ingresos Extra
+        $stmtIncomes = $this->db->prepare(
+            "SELECT DATE_FORMAT(income_date, '%Y-%m') as month, COALESCE(SUM(amount), 0) as total 
+               FROM incomes 
+              WHERE band_id = :band_id 
+                AND income_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+              GROUP BY DATE_FORMAT(income_date, '%Y-%m')"
+        );
+        $stmtIncomes->execute([':band_id' => $bandId]);
+        $incomes = $stmtIncomes->fetchAll() ?: [];
+
+        // 4. Cache Cobrado (conciertos realizados)
+        $stmtCache = $this->db->prepare(
+            "SELECT DATE_FORMAT(event_date, '%Y-%m') as month, COALESCE(SUM(cache_amount), 0) as total 
+               FROM events 
+              WHERE band_id = :band_id 
+                AND event_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                AND event_date <= CURDATE()
+              GROUP BY DATE_FORMAT(event_date, '%Y-%m')"
+        );
+        $stmtCache->execute([':band_id' => $bandId]);
+        $cache = $stmtCache->fetchAll() ?: [];
+
+        // Unificar todos los meses detectados
+        $months = [];
+        foreach ($sales as $r) $months[$r['month']] = true;
+        foreach ($expenses as $r) $months[$r['month']] = true;
+        foreach ($incomes as $r) $months[$r['month']] = true;
+        foreach ($cache as $r) $months[$r['month']] = true;
+
+        if (empty($months)) {
+            $months[date('Y-m')] = true;
+        }
+
+        ksort($months);
+
+        $salesMap = array_column($sales, 'total', 'month');
+        $expensesMap = array_column($expenses, 'total', 'month');
+        $incomesMap = array_column($incomes, 'total', 'month');
+        $cacheMap = array_column($cache, 'total', 'month');
+
+        $chartData = [];
+        foreach (array_keys($months) as $m) {
+            $sVal = (float)($salesMap[$m] ?? 0.0);
+            $cVal = (float)($cacheMap[$m] ?? 0.0);
+            $iVal = (float)($incomesMap[$m] ?? 0.0);
+            $eVal = (float)($expensesMap[$m] ?? 0.0);
+
+            $ingresosTotales = $sVal + $cVal + $iVal;
+            $balanceNeto = $ingresosTotales - $eVal;
+
+            $chartData[] = [
+                'month' => $m,
+                'sales' => $sVal,
+                'cache' => $cVal,
+                'incomes' => $iVal,
+                'expenses' => $eVal,
+                'total_in' => $ingresosTotales,
+                'net_balance' => $balanceNeto
+            ];
+        }
+
+        return $chartData;
     }
 }

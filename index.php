@@ -47,6 +47,8 @@ spl_autoload_register(function (string $class): void {
         'Sale'            => __DIR__ . '/models/Sale.php',
         'Expense'         => __DIR__ . '/models/Expense.php',
         'RecurringExpense'=> __DIR__ . '/models/RecurringExpense.php',
+        'Income'          => __DIR__ . '/models/Income.php',
+        'EventTask'       => __DIR__ . '/models/EventTask.php',
         // Controllers
         'BandController'  => __DIR__ . '/controllers/BandController.php',
         'AuthController'  => __DIR__ . '/controllers/AuthController.php',
@@ -58,6 +60,8 @@ spl_autoload_register(function (string $class): void {
         'SaleController'  => __DIR__ . '/controllers/SaleController.php',
         'ExpenseController'=> __DIR__ . '/controllers/ExpenseController.php',
         'RecurringExpenseController' => __DIR__ . '/controllers/RecurringExpenseController.php',
+        'IncomeController' => __DIR__ . '/controllers/IncomeController.php',
+        'TaskController'   => __DIR__ . '/controllers/TaskController.php',
     ];
 
     if (isset($map[$class])) {
@@ -136,6 +140,7 @@ $routes = [
     ['DELETE','/events',         'EventController', 'destroy'],
     ['POST', '/events/close',    'EventController', 'close'],
     ['GET',  '/events/summary',  'EventController', 'summary'],
+    ['GET',  '/events/monthly-flow', 'EventController', 'monthlyFlow'],
     ['POST', '/sales',           'SaleController', 'store'],
     ['GET',    '/expenses',     'ExpenseController', 'index'],
     ['POST',   '/expenses',     'ExpenseController', 'store'],
@@ -148,6 +153,18 @@ $routes = [
     ['POST',   '/recurring-expenses',    'RecurringExpenseController', 'store'],
     ['PUT',    '/recurring-expenses',    'RecurringExpenseController', 'update'],
     ['DELETE', '/recurring-expenses',    'RecurringExpenseController', 'destroy'],
+
+    // --- Ingresos Extra ---
+    ['GET',    '/incomes',    'IncomeController', 'index'],
+    ['POST',   '/incomes',    'IncomeController', 'store'],
+    ['PUT',    '/incomes',    'IncomeController', 'update'],
+    ['DELETE', '/incomes',    'IncomeController', 'destroy'],
+
+    // --- Tareas de Evento ---
+    ['GET',    '/tasks',    'TaskController', 'index'],
+    ['POST',   '/tasks',    'TaskController', 'store'],
+    ['PUT',    '/tasks',    'TaskController', 'update'],
+    ['DELETE', '/tasks',    'TaskController', 'destroy'],
 ];
 
 foreach ($routes as [$routeMethod, $pattern, $controller, $action]) {

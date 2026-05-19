@@ -188,6 +188,23 @@ class EventController
         Response::success(['event' => $event, 'summary' => $summary]);
     }
 
+    // ---------------------------------------------------------
+    // GET /api/v1/events/monthly-flow
+    // Obtiene la evolución mensual de ingresos y gastos
+    // ---------------------------------------------------------
+    public function monthlyFlow(): void
+    {
+        AuthMiddleware::handle();
+        $user = AuthMiddleware::getCurrentUser();
+
+        try {
+            $data = $this->eventModel->getMonthlyFlow($user['band_id']);
+            Response::success($data);
+        } catch (Exception $e) {
+            Response::error('Error al obtener la evolución mensual: ' . $e->getMessage(), 500);
+        }
+    }
+
     private function getJsonBody(): array
     {
         $raw = file_get_contents('php://input');
