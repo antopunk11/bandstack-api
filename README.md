@@ -8,15 +8,18 @@ Esta es la API RESTful de **BandStack Manager**, el motor principal que da sopor
   - Sistema de seguridad robusto con JWT (JSON Web Tokens).
   - Flujo completo de Access y Refresh Tokens persistentes en base de datos.
   - Control de Acceso Basado en Roles (RBAC): Administradores y Miembros.
+  - **Registro de accesos (Audit Logs):** Auditoría de inicios de sesión exitosos y fallidos con IP y User-Agent para mayor seguridad.
 
 - **Inventario y Productos:**
-  - Organización jerárquica: Categorías > Productos > Variantes (ej. Camisetas > Tour 2025 > Talla M).
+  - Organización jerárquica: Categorías > Productos > Variantes (tallas, colores, precios, stock).
+  - Sincronización automática de stock del producto padre basado en la suma de existencias de sus variantes.
   - Registro inmutable de movimientos de stock (compras, ventas, ajustes, regalos).
 
 - **Eventos y Finanzas:**
   - Gestión del ciclo de vida de los eventos (conciertos, festivales, ensayos).
   - Endpoints para Puntos de Venta (POS) con registro detallado de los métodos de pago.
-  - Control de Gastos (dietas, gasolina, peajes, alquiler de equipo) con posibilidad de vincularlos a eventos específicos.
+  - **Gastos Recurrentes Automatizados:** Plantillas de gastos (semanales, mensuales, anuales) que generan gastos automáticos cuando se alcanza la fecha de vencimiento.
+  - Control de Gastos (dietas, gasolina con kilometraje dinámico, peajes, alquiler de equipo) con filtros avanzados por categoría, creador y texto, y ordenamiento multidimensional.
 
 ## 🛠️ Tecnologías
 
