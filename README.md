@@ -18,8 +18,13 @@ Esta es la API RESTful de **BandStack Manager**, el motor principal que da sopor
 - **Eventos y Finanzas:**
   - Gestión del ciclo de vida de los eventos (conciertos, festivales, ensayos).
   - Endpoints para Puntos de Venta (POS) con registro detallado de los métodos de pago.
+  - **Previsión y Flujo Mensual (`GET /events/monthly-flow`):** Consolidado mensual inteligente que junta las ventas, cobros de caché, ingresos extra y gastos con una ventana de proyección a 12 meses vista para visualizar el cash-flow.
+  - **Ingresos Extra y Saldo Inicial (`api/v1/incomes`):** Endpoints CRUD completos para aportaciones de socios, patrocinios, royalties y establecimiento de caja inicial.
   - **Gastos Recurrentes Automatizados:** Plantillas de gastos (semanales, mensuales, anuales) que generan gastos automáticos cuando se alcanza la fecha de vencimiento.
-  - Control de Gastos (dietas, gasolina con kilometraje dinámico, peajes, alquiler de equipo) con filtros avanzados por categoría, creador y texto, y ordenamiento multidimensional.
+  - Control de Gastos (dietas, gasolina con kilometraje dinámico, peajes, alquiler de equipo) con filtros avanzados y ordenamiento multidimensional.
+
+- **Coordinación y Tareas de Eventos:**
+  - **Checklists por Evento (`api/v1/tasks`):** Endpoint CRUD para el control de tareas previas/posteriores al directo. Permite asignar responsables de la banda, establecer fechas de entrega y gestionar los estados (`pending`, `in_progress`, `completed`).
 
 ## 🛠️ Tecnologías
 
